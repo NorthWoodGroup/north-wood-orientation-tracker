@@ -216,6 +216,15 @@
     return { 'Not Started': 'not-started', 'In Progress': 'in-progress', 'Completed': 'completed', 'Overdue': 'overdue' }[status] || 'not-started';
   }
 
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function formatDate(value) {
+    if (!value) return '—';
+    var datePart = String(value).slice(0, 10); // handles both "yyyy-MM-dd" and full ISO timestamps
+    var m = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return String(value);
+    return m[3] + '-' + MONTHS[parseInt(m[2], 10) - 1] + '-' + m[1];
+  }
+
   // ---- Login ----
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('pin').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
@@ -288,8 +297,8 @@
             '<h3>' + escapeHtml(m.Title) + '</h3>' +
             '<div class="meta">' +
               '<span>' + escapeHtml(m.Category || '') + '</span>' +
-              '<span>Due ' + escapeHtml(m.DueDate || '—') + '</span>' +
-              (m.Status === 'Completed' ? '<span>Completed ' + escapeHtml(m.CompletedDate) + '</span>' : '') +
+              '<span>Due ' + formatDate(m.DueDate) + '</span>' +
+              (m.Status === 'Completed' ? '<span>Completed ' + formatDate(m.CompletedDate) + '</span>' : '') +
             '</div>' +
           '</div>' +
           '<span class="pill ' + statusClass(m.Status) + '">' + m.Status + '</span>';
@@ -386,7 +395,7 @@
     foot.innerHTML = '';
 
     if (m.Status === 'Completed') {
-      foot.innerHTML = '<div class="quiz-result pass">Completed on ' + escapeHtml(m.CompletedDate) + '.</div>';
+      foot.innerHTML = '<div class="quiz-result pass">Completed on ' + formatDate(m.CompletedDate) + '.</div>';
       return;
     }
 
