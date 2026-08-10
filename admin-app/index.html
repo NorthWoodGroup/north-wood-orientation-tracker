@@ -211,6 +211,15 @@
     return { 'Not Started': 'not-started', 'In Progress': 'in-progress', 'Completed': 'completed', 'Overdue': 'overdue' }[status] || 'not-started';
   }
 
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function formatDate(value) {
+    if (!value) return '—';
+    var datePart = String(value).slice(0, 10); // handles both "yyyy-MM-dd" and full ISO timestamps
+    var m = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return String(value);
+    return m[3] + '-' + MONTHS[parseInt(m[2], 10) - 1] + '-' + m[1];
+  }
+
   // ---- Login ----
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('pin').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
@@ -311,8 +320,8 @@
         '<td>' + escapeHtml(a.Role) + '</td>' +
         '<td>' + escapeHtml(a.ModuleTitle) + '</td>' +
         '<td>' + escapeHtml(a.Category) + '</td>' +
-        '<td>' + escapeHtml(a.AssignedDate) + '</td>' +
-        '<td>' + escapeHtml(a.DueDate) + '</td>' +
+        '<td>' + formatDate(a.AssignedDate) + '</td>' +
+        '<td>' + formatDate(a.DueDate) + '</td>' +
         '<td><span class="pill ' + statusClass(a.Status) + '">' + a.Status + '</span></td>' +
         '<td>' + escapeHtml(a.Source) + '</td>' +
         '<td><button class="btn-danger" data-remove="' + a.AssignmentID + '">Remove</button></td>' +
