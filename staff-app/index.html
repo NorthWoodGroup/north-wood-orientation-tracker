@@ -261,7 +261,7 @@
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appScreen').style.display = 'flex';
     document.getElementById('whoName').textContent = state.staff.Name;
-    document.getElementById('whoRole').textContent = state.staff.Role + (state.staff.Office ? ' · ' + state.staff.Office : '');
+    document.getElementById('whoRole').textContent = state.staff.Role + (state.staff.Department ? ' · ' + state.staff.Department : '');
     loadDashboard();
   }
 
