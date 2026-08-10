@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>North Wood Group — Orientation Admin</title>
+<style>
+  :root {
+    --nw-black: #121212;
+    --nw-black-soft: #1c1c1a;
+    --nw-white: #ffffff;
+    --nw-offwhite: #f6f6f4;
+    --nw-grey-100: #ececea;
+    --nw-grey-200: #e0e0dc;
+    --nw-grey-300: #d4d4ce;
+    --nw-grey-500: #9a9a92;
+    --nw-grey-700: #57574f;
+    --nw-text: #1c1c1a;
+    --nw-not-started: #8a8a82;
+    --nw-in-progress: #b8860b;
+    --nw-completed: #2e7d4f;
+    --nw-overdue: #c0392b;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--nw-offwhite); color: var(--nw-text); min-height: 100vh;
+  }
+  h1, h2, h3 { letter-spacing: 0.02em; }
+  .brand-title { letter-spacing: 0.12em; text-transform: uppercase; }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+  table { border-collapse: collapse; width: 100%; }
+
+  /* ---- Login ---- */
+  #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--nw-black); padding: 24px; }
+  .login-card { background: var(--nw-black-soft); border: 1px solid #2c2c28; border-radius: var(--radius); padding: 40px 36px; width: 100%; max-width: 380px; text-align: center; }
+  .login-card img.logo { width: 140px; margin-bottom: 20px; }
+  .login-card h1 { color: var(--nw-white); font-size: 15px; margin: 0 0 4px; }
+  .login-card p.sub { color: var(--nw-grey-500); font-size: 13px; margin: 0 0 28px; }
+  .field { text-align: left; margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--nw-grey-500); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--nw-grey-300); background: #fff; color: var(--nw-text); font-size: 14px;
+  }
+  .login-card .field input { border: 1px solid #3a3a34; background: #242420; color: #fff; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--nw-grey-500); }
+  .btn-primary { padding: 10px 18px; border-radius: 6px; border: none; background: var(--nw-black); color: #fff; font-weight: 600; font-size: 13px; letter-spacing: 0.03em; }
+  .btn-primary:hover { background: #2b2b26; }
+  .btn-primary:disabled { opacity: 0.5; }
+  .login-card .btn-primary { width: 100%; background: #fff; color: var(--nw-black); text-transform: uppercase; padding: 12px; margin-top: 6px; }
+  .login-card .btn-primary:hover { background: var(--nw-grey-200); }
+  .error-text { color: #c0392b; font-size: 13px; margin-top: 14px; min-height: 18px; }
+  .login-card .error-text { color: #e08a7d; }
+
+  /* ---- Shell ---- */
+  #appScreen { display: none; min-height: 100vh; flex-direction: column; }
+  header.topbar { display: flex; align-items: center; justify-content: space-between; background: var(--nw-white); border-bottom: 1px solid var(--nw-grey-200); padding: 14px 24px; }
+  header.topbar img.logo { height: 38px; }
+  .who { display: flex; align-items: center; gap: 14px; }
+  .who .name { font-size: 14px; font-weight: 600; }
+  .btn-ghost { background: transparent; border: 1px solid var(--nw-grey-300); color: var(--nw-text); padding: 8px 14px; border-radius: 6px; font-size: 13px; }
+  .btn-ghost:hover { background: var(--nw-grey-100); }
+  .btn-danger { background: transparent; border: 1px solid #e6b8b0; color: var(--nw-overdue); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+  .btn-danger:hover { background: #fbe9e6; }
+
+  nav.tabs { display: flex; gap: 4px; background: var(--nw-white); border-bottom: 1px solid var(--nw-grey-200); padding: 0 24px; }
+  nav.tabs button { background: none; border: none; padding: 14px 16px; font-size: 13px; font-weight: 600; color: var(--nw-grey-700); border-bottom: 2px solid transparent; }
+  nav.tabs button.active { color: var(--nw-black); border-bottom-color: var(--nw-black); }
+
+  main { flex: 1; padding: 28px 24px 60px; max-width: 1180px; margin: 0 auto; width: 100%; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+  .panel-head h2 { font-size: 18px; margin: 0; }
+  .filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filters select, .filters input { padding: 8px 10px; border-radius: 6px; border: 1px solid var(--nw-grey-300); font-size: 13px; background: #fff; }
+
+  .card-table { background: var(--nw-white); border: 1px solid var(--nw-grey-200); border-radius: var(--radius); overflow: hidden; }
+  th, td { text-align: left; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--nw-grey-100); white-space: nowrap; }
+  th { background: var(--nw-grey-100); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--nw-grey-700); }
+  tr:last-child td { border-bottom: none; }
+  tr.row-hover:hover { background: #fafaf8; cursor: pointer; }
+
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #fff; white-space: nowrap; }
+  .pill.not-started { background: var(--nw-not-started); }
+  .pill.in-progress { background: var(--nw-in-progress); }
+  .pill.completed { background: var(--nw-completed); }
+  .pill.overdue { background: var(--nw-overdue); }
+  .pill.inactive { background: var(--nw-grey-500); }
+
+  .empty-state { color: var(--nw-grey-500); font-size: 14px; padding: 40px 0; text-align: center; }
+
+  /* ---- Modal ---- */
+  #modalOverlay { display: none; position: fixed; inset: 0; background: rgba(18,18,18,0.55); align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+  .modal-panel { background: var(--nw-white); border-radius: var(--radius); width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+  .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--nw-grey-200); display: flex; justify-content: space-between; align-items: center; }
+  .modal-head h3 { margin: 0; font-size: 16px; }
+  .modal-close { background: none; border: none; font-size: 20px; color: var(--nw-grey-700); }
+  .modal-body { padding: 20px 22px; }
+  .modal-foot { padding: 16px 22px; border-top: 1px solid var(--nw-grey-200); display: flex; justify-content: flex-end; gap: 10px; }
+  .modal-error { color: var(--nw-overdue); font-size: 13px; margin-top: 4px; min-height: 16px; }
+  .quiz-row { border: 1px solid var(--nw-grey-200); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  .quiz-row .field { margin-bottom: 8px; }
+  .quiz-row .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .small-note { font-size: 12px; color: var(--nw-grey-500); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <img class="logo" src="../assets/logo-dark-bg.png" alt="North Wood Group">
+    <h1 class="brand-title">Orientation Admin</h1>
+    <p class="sub">Sign in with your admin username and PIN</p>
+    <div class="field"><label for="username">Username</label><input id="username" type="text" autocomplete="username" autocapitalize="none"></div>
+    <div class="field"><label for="pin">PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="current-password"></div>
+    <button class="btn-primary" id="loginBtn">Sign In</button>
+    <div class="error-text" id="loginError"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <header class="topbar">
+    <img class="logo" src="../assets/logo-light-bg.png" alt="North Wood Group">
+    <div class="who">
+      <div class="name" id="whoName"></div>
+      <button class="btn-ghost" id="signOutBtn">Sign Out</button>
+    </div>
+  </header>
+  <nav class="tabs">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="staff">Staff</button>
+    <button data-tab="modules">Modules</button>
+    <button data-tab="admins">Admins</button>
+  </nav>
+  <main>
+    <section class="panel active" id="panel-dashboard">
+      <div class="panel-head">
+        <h2>Completion Dashboard</h2>
+        <button class="btn-primary" id="assignBtn">+ Assign Module</button>
+      </div>
+      <div class="filters">
+        <select id="filterOffice"><option value="">All Offices</option></select>
+        <select id="filterRole"><option value="">All Roles</option></select>
+        <select id="filterStatus">
+          <option value="">All Statuses</option>
+          <option>Not Started</option><option>In Progress</option><option>Completed</option><option>Overdue</option>
+        </select>
+      </div>
+      <div class="card-table"><table><thead><tr>
+        <th>Staff</th><th>Office</th><th>Role</th><th>Module</th><th>Category</th><th>Assigned</th><th>Due</th><th>Status</th><th>Source</th><th></th>
+      </tr></thead><tbody id="dashboardBody"></tbody></table></div>
+    </section>
+
+    <section class="panel" id="panel-staff">
+      <div class="panel-head"><h2>Staff</h2><button class="btn-primary" id="addStaffBtn">+ Add Staff</button></div>
+      <div class="card-table"><table><thead><tr>
+        <th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Office</th><th>Status</th>
+      </tr></thead><tbody id="staffBody"></tbody></table></div>
+    </section>
+
+    <section class="panel" id="panel-modules">
+      <div class="panel-head"><h2>Module Library</h2><button class="btn-primary" id="addModuleBtn">+ Add Module</button></div>
+      <div class="card-table"><table><thead><tr>
+        <th>Title</th><th>Category</th><th>Type</th><th>Completion</th><th>Days</th><th>Default Roles</th>
+      </tr></thead><tbody id="modulesBody"></tbody></table></div>
+    </section>
+
+    <section class="panel" id="panel-admins">
+      <div class="panel-head"><h2>Admins</h2><button class="btn-primary" id="addAdminBtn">+ Add Admin</button></div>
+      <div class="card-table"><table><thead><tr><th>Name</th><th>Username</th><th>Email</th></tr></thead><tbody id="adminsBody"></tbody></table></div>
+    </section>
+  </main>
+</div>
+
+<div id="modalOverlay">
+  <div class="modal-panel">
+    <div class="modal-head"><h3 id="modalTitle"></h3><button class="modal-close" id="modalCloseBtn">&times;</button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<script>
+  // Set this to your deployed Apps Script web app URL (Deploy > Manage deployments).
+  var CONFIG = { API_URL: 'https://script.google.com/macros/s/AKfycbyjHlJ0M3gjIrQ0VXA7bXdlbnYzURLWo8wWnMmo3EzMQz9EcoURMjw6EfmSXaLc__HE/exec' };
+  var STORAGE_KEY = 'nw_admin_session';
+  var ROLES = ['Warehouse', 'Driver', 'Office', 'Management'];
+
+  var state = { admin: null, staff: [], modules: [], admins: [], dashboard: [] };
+
+  function apiCall(action, payload) {
+    return fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, payload: payload || {} })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error(r.error || 'Request failed'); return r.data; });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function statusClass(status) {
+    return { 'Not Started': 'not-started', 'In Progress': 'in-progress', 'Completed': 'completed', 'Overdue': 'overdue' }[status] || 'not-started';
+  }
+
+  // ---- Login ----
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('pin').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+
+  function doLogin() {
+    var username = document.getElementById('username').value.trim();
+    var pin = document.getElementById('pin').value.trim();
+    var errEl = document.getElementById('loginError');
+    errEl.textContent = '';
+    if (!username || !pin) { errEl.textContent = 'Enter your username and PIN.'; return; }
+    var btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    apiCall('adminLogin', { username: username, pin: pin })
+      .then(function (admin) {
+        if (!admin) { errEl.textContent = 'Incorrect username or PIN.'; btn.disabled = false; return; }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(admin));
+        state.admin = admin;
+        showApp();
+      })
+      .catch(function (e) { errEl.textContent = e.message; btn.disabled = false; });
+  }
+
+  document.getElementById('signOutBtn').addEventListener('click', function () {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+
+  function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'flex';
+    document.getElementById('whoName').textContent = state.admin.Name;
+    refreshAll();
+  }
+
+  // ---- Tabs ----
+  document.querySelectorAll('nav.tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('nav.tabs button').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  function refreshAll() {
+    Promise.all([
+      apiCall('listStaff', {}),
+      apiCall('listModules', {}),
+      apiCall('listAdmins', {}),
+      apiCall('getAdminDashboard', {})
+    ]).then(function (r) {
+      state.staff = r[0]; state.modules = r[1]; state.admins = r[2]; state.dashboard = r[3];
+      renderStaff(); renderModules(); renderAdmins(); renderDashboard();
+    }).catch(function (e) { alert(e.message); });
+  }
+
+  // ---- Modal helpers ----
+  var modalOverlay = document.getElementById('modalOverlay');
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', function (e) { if (e.target === modalOverlay) closeModal(); });
+  function closeModal() { modalOverlay.style.display = 'none'; document.getElementById('modalBody').innerHTML = ''; document.getElementById('modalFoot').innerHTML = ''; }
+  function openModal(title, bodyHtml, footHtml) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = bodyHtml;
+    document.getElementById('modalFoot').innerHTML = footHtml || '';
+    modalOverlay.style.display = 'flex';
+  }
+
+  // =========================================================
+  // DASHBOARD
+  // =========================================================
+  function populateFilterOptions() {
+    var offices = Array.from(new Set(state.staff.map(function (s) { return s.Office; }).filter(Boolean))).sort();
+    var roles = Array.from(new Set(state.staff.map(function (s) { return s.Role; }).filter(Boolean))).sort();
+    var officeSel = document.getElementById('filterOffice');
+    var roleSel = document.getElementById('filterRole');
+    officeSel.innerHTML = '<option value="">All Offices</option>' + offices.map(function (o) { return '<option>' + escapeHtml(o) + '</option>'; }).join('');
+    roleSel.innerHTML = '<option value="">All Roles</option>' + roles.map(function (r) { return '<option>' + escapeHtml(r) + '</option>'; }).join('');
+  }
+  ['filterOffice', 'filterRole', 'filterStatus'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', renderDashboard);
+  });
+
+  function renderDashboard() {
+    populateFilterOptions();
+    var office = document.getElementById('filterOffice').value;
+    var role = document.getElementById('filterRole').value;
+    var status = document.getElementById('filterStatus').value;
+    var rows = state.dashboard.filter(function (a) {
+      return (!office || a.Office === office) && (!role || a.Role === role) && (!status || a.Status === status);
+    });
+    var body = document.getElementById('dashboardBody');
+    if (rows.length === 0) { body.innerHTML = '<tr><td colspan="10" class="empty-state">No assignments match these filters.</td></tr>'; return; }
+    body.innerHTML = rows.map(function (a) {
+      return '<tr>' +
+        '<td>' + escapeHtml(a.StaffName) + '</td>' +
+        '<td>' + escapeHtml(a.Office) + '</td>' +
+        '<td>' + escapeHtml(a.Role) + '</td>' +
+        '<td>' + escapeHtml(a.ModuleTitle) + '</td>' +
+        '<td>' + escapeHtml(a.Category) + '</td>' +
+        '<td>' + escapeHtml(a.AssignedDate) + '</td>' +
+        '<td>' + escapeHtml(a.DueDate) + '</td>' +
+        '<td><span class="pill ' + statusClass(a.Status) + '">' + a.Status + '</span></td>' +
+        '<td>' + escapeHtml(a.Source) + '</td>' +
+        '<td><button class="btn-danger" data-remove="' + a.AssignmentID + '">Remove</button></td>' +
+        '</tr>';
+    }).join('');
+    body.querySelectorAll('[data-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (!confirm('Remove this assignment?')) return;
+        apiCall('removeAssignment', { assignmentId: btn.dataset.remove }).then(refreshAll).catch(function (e) { alert(e.message); });
+      });
+    });
+  }
+
+  document.getElementById('assignBtn').addEventListener('click', function () {
+    var staffOptions = state.staff.filter(function (s) { return s.Active; }).map(function (s) { return '<option value="' + s.StaffID + '">' + escapeHtml(s.Name) + '</option>'; }).join('');
+    var moduleOptions = state.modules.map(function (m) { return '<option value="' + m.ModuleID + '">' + escapeHtml(m.Title) + '</option>'; }).join('');
+    openModal('Assign Module',
+      '<div class="field"><label>Staff Member</label><select id="asgStaff">' + staffOptions + '</select></div>' +
+      '<div class="field"><label>Module</label><select id="asgModule">' + moduleOptions + '</select></div>' +
+      '<div class="modal-error" id="asgError"></div>',
+      '<button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-primary" id="asgSubmit">Assign</button>'
+    );
+    document.getElementById('asgSubmit').addEventListener('click', function () {
+      var staffId = document.getElementById('asgStaff').value;
+      var moduleId = document.getElementById('asgModule').value;
+      apiCall('addIndividualAssignment', { staffId: staffId, moduleId: moduleId })
+        .then(function () { closeModal(); refreshAll(); })
+        .catch(function (e) { document.getElementById('asgError').textContent = e.message; });
+    });
+  });
+
+  // =========================================================
+  // STAFF
+  // =========================================================
+  function renderStaff() {
+    var body = document.getElementById('staffBody');
+    if (state.staff.length === 0) { body.innerHTML = '<tr><td colspan="6" class="empty-state">No staff yet.</td></tr>'; return; }
+    body.innerHTML = state.staff.map(function (s) {
+      var active = (s.Active === true || s.Active === 'TRUE' || s.Active === 'Y');
+      return '<tr class="row-hover" data-staff="' + s.StaffID + '">' +
+        '<td>' + escapeHtml(s.Name) + '</td><td>' + escapeHtml(s.Username) + '</td><td>' + escapeHtml(s.Email) + '</td>' +
+        '<td>' + escapeHtml(s.Role) + '</td><td>' + escapeHtml(s.Office) + '</td>' +
+        '<td><span class="pill ' + (active ? 'completed' : 'inactive') + '">' + (active ? 'Active' : 'Inactive') + '</span></td>' +
+        '</tr>';
+    }).join('');
+    body.querySelectorAll('[data-staff]').forEach(function (row) {
+      row.addEventListener('click', function () { openEditStaff(row.dataset.staff); });
+    });
+  }
+
+  document.getElementById('addStaffBtn').addEventListener('click', function () { openStaffForm(null); });
+
+  function openStaffForm(staff) {
+    var isEdit = !!staff;
+    var roleOptions = ROLES.map(function (r) { return '<option ' + (staff && staff.Role === r ? 'selected' : '') + '>' + r + '</option>'; }).join('');
+    openModal(isEdit ? 'Edit Staff' : 'Add Staff',
+      '<div class="field"><label>Name</label><input id="stName" value="' + (staff ? escapeHtml(staff.Name) : '') + '"></div>' +
+      '<div class="field"><label>Username</label><input id="stUsername" value="' + (staff ? escapeHtml(staff.Username) : '') + '"></div>' +
+      '<div class="field"><label>Email</label><input id="stEmail" value="' + (staff ? escapeHtml(staff.Email) : '') + '"></div>' +
+      '<div class="field"><label>Role</label><select id="stRole">' + roleOptions + '</select></div>' +
+      '<div class="field"><label>Office / Department</label><input id="stOffice" value="' + (staff ? escapeHtml(staff.Office) : '') + '"></div>' +
+      (isEdit
+        ? '<div class="field"><label>Active</label><select id="stActive"><option value="true"' + (staff.Active ? ' selected' : '') + '>Active</option><option value="false"' + (!staff.Active ? ' selected' : '') + '>Inactive</option></select></div>'
+        : '<div class="field"><label>Initial PIN</label><input id="stPin" inputmode="numeric"></div>') +
+      '<div class="modal-error" id="stError"></div>',
+      (isEdit ? '<button class="btn-ghost" id="stResetPin">Reset PIN</button>' : '') +
+      '<button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-primary" id="stSubmit">Save</button>'
+    );
+
+    if (isEdit) {
+      document.getElementById('stResetPin').addEventListener('click', function () {
+        var newPin = prompt('Enter a new PIN for ' + staff.Name + ':');
+        if (!newPin) return;
+        apiCall('setStaffPin', { staffId: staff.StaffID, newPin: newPin }).then(function () { alert('PIN updated.'); }).catch(function (e) { alert(e.message); });
+      });
+    }
+
+    document.getElementById('stSubmit').addEventListener('click', function () {
+      var payload = {
+        Name: document.getElementById('stName').value.trim(),
+        Username: document.getElementById('stUsername').value.trim(),
+        Email: document.getElementById('stEmail').value.trim(),
+        Role: document.getElementById('stRole').value,
+        Office: document.getElementById('stOffice').value.trim()
+      };
+      if (!payload.Name || !payload.Username) { document.getElementById('stError').textContent = 'Name and username are required.'; return; }
+
+      if (isEdit) {
+        payload.Active = document.getElementById('stActive').value === 'true';
+        apiCall('updateStaff', { staffId: staff.StaffID, updates: payload })
+          .then(function () { closeModal(); refreshAll(); })
+          .catch(function (e) { document.getElementById('stError').textContent = e.message; });
+      } else {
+        var pin = document.getElementById('stPin').value.trim();
+        if (!pin) { document.getElementById('stError').textContent = 'Set an initial PIN.'; return; }
+        apiCall('addStaff', { staff: payload, initialPin: pin })
+          .then(function () { closeModal(); refreshAll(); })
+          .catch(function (e) { document.getElementById('stError').textContent = e.message; });
+      }
+    });
+  }
+
+  function openEditStaff(staffId) {
+    var staff = state.staff.find(function (s) { return s.StaffID === staffId; });
+    if (staff) openStaffForm(staff);
+  }
+
+  // =========================================================
+  // MODULES
+  // =========================================================
+  function renderModules() {
+    var body = document.getElementById('modulesBody');
+    if (state.modules.length === 0) { body.innerHTML = '<tr><td colspan="6" class="empty-state">No modules yet.</td></tr>'; return; }
+    body.innerHTML = state.modules.map(function (m) {
+      return '<tr class="row-hover" data-module="' + m.ModuleID + '">' +
+        '<td>' + escapeHtml(m.Title) + '</td><td>' + escapeHtml(m.Category) + '</td>' +
+        '<td>' + escapeHtml(m.FileType) + '</td><td>' + escapeHtml(m.CompletionMethod) + '</td>' +
+        '<td>' + escapeHtml(m.DaysToComplete) + '</td><td>' + escapeHtml(m.DefaultForRoles) + '</td>' +
+        '</tr>';
+    }).join('');
+    body.querySelectorAll('[data-module]').forEach(function (row) {
+      row.addEventListener('click', function () { openModuleForm(state.modules.find(function (m) { return m.ModuleID === row.dataset.module; })); });
+    });
+  }
+
+  document.getElementById('addModuleBtn').addEventListener('click', function () { openModuleForm(null); });
+
+  function openModuleForm(module) {
+    var isEdit = !!module;
+    var fileTypes = ['pdf', 'doc', 'link', 'video'];
+    var methods = ['checkbox', 'scroll', 'quiz'];
+    var fileTypeOptions = fileTypes.map(function (t) { return '<option ' + (module && module.FileType === t ? 'selected' : '') + '>' + t + '</option>'; }).join('');
+    var methodOptions = methods.map(function (t) { return '<option ' + (module && module.CompletionMethod === t ? 'selected' : '') + '>' + t + '</option>'; }).join('');
+    var roleChecks = ROLES.map(function (r) {
+      var checked = module && (module.DefaultForRoles || '').split(',').map(function (x) { return x.trim(); }).indexOf(r) !== -1;
+      return '<label style="margin-right:12px;font-size:13px;"><input type="checkbox" class="roleCk" value="' + r + '" ' + (checked ? 'checked' : '') + '> ' + r + '</label>';
+    }).join('');
+
+    openModal(isEdit ? 'Edit Module' : 'Add Module',
+      '<div class="field"><label>Title</label><input id="mdTitle" value="' + (module ? escapeHtml(module.Title) : '') + '"></div>' +
+      '<div class="field"><label>Description</label><textarea id="mdDesc" rows="2">' + (module ? escapeHtml(module.Description) : '') + '</textarea></div>' +
+      '<div class="field"><label>Category</label><input id="mdCategory" value="' + (module ? escapeHtml(module.Category) : '') + '"></div>' +
+      '<div class="field"><label>File Type</label><select id="mdFileType">' + fileTypeOptions + '</select></div>' +
+      '<div class="field" id="mdUrlField"><label>URL / GitHub Path</label><input id="mdUrl" value="' + (module ? escapeHtml(module.FilePathOrURL) : '') + '" placeholder="https://... (link/video) or leave blank and upload a file below"></div>' +
+      '<div class="field" id="mdUploadField"><label>Or upload a file (pdf/doc)</label><input id="mdFile" type="file"><div class="small-note">Uploads commit into this repo\'s materials/ folder via GitHub. Requires GITHUB_TOKEN to be configured — see SETUP.md.</div></div>' +
+      '<div class="field"><label>Completion Method</label><select id="mdMethod">' + methodOptions + '</select></div>' +
+      '<div class="field"><label>Days to Complete</label><input id="mdDays" type="number" min="1" value="' + (module ? module.DaysToComplete : 14) + '"></div>' +
+      '<div class="field"><label>Default For Roles</label>' + roleChecks + '</div>' +
+      '<div class="modal-error" id="mdError"></div>',
+      (isEdit ? '<button class="btn-danger" id="mdDelete">Delete</button>' : '') +
+      (isEdit && module.CompletionMethod === 'quiz' ? '<button class="btn-ghost" id="mdQuiz">Manage Quiz</button>' : '') +
+      '<button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-primary" id="mdSubmit">Save</button>'
+    );
+
+    if (isEdit) {
+      document.getElementById('mdDelete').addEventListener('click', function () {
+        if (!confirm('Delete "' + module.Title + '"? This does not remove existing assignments.')) return;
+        apiCall('deleteModule', { moduleId: module.ModuleID }).then(function () { closeModal(); refreshAll(); }).catch(function (e) { alert(e.message); });
+      });
+      var quizBtn = document.getElementById('mdQuiz');
+      if (quizBtn) quizBtn.addEventListener('click', function () { openQuizEditor(module); });
+    }
+
+    document.getElementById('mdSubmit').addEventListener('click', function () {
+      var errEl = document.getElementById('mdError');
+      var payload = {
+        Title: document.getElementById('mdTitle').value.trim(),
+        Description: document.getElementById('mdDesc').value.trim(),
+        Category: document.getElementById('mdCategory').value.trim(),
+        FileType: document.getElementById('mdFileType').value,
+        CompletionMethod: document.getElementById('mdMethod').value,
+        DaysToComplete: parseInt(document.getElementById('mdDays').value, 10) || 14,
+        DefaultForRoles: Array.from(document.querySelectorAll('.roleCk:checked')).map(function (c) { return c.value; }).join(',')
+      };
+      if (!payload.Title) { errEl.textContent = 'Title is required.'; return; }
+
+      var fileInput = document.getElementById('mdFile');
+      var urlValue = document.getElementById('mdUrl').value.trim();
+
+      function saveModule(finalUrl) {
+        payload.FilePathOrURL = finalUrl;
+        var call = isEdit ? apiCall('updateModule', { moduleId: module.ModuleID, updates: payload }) : apiCall('addModule', { module: payload });
+        call.then(function () { closeModal(); refreshAll(); }).catch(function (e) { errEl.textContent = e.message; });
+      }
+
+      if (fileInput.files && fileInput.files[0]) {
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+        reader.onload = function () {
+          var base64 = reader.result.split(',')[1];
+          var slug = (payload.Category || 'general').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'general';
+          var repoPath = 'materials/' + slug + '/' + file.name.replace(/\s+/g, '-');
+          apiCall('uploadMaterial', { repoPath: repoPath, base64Content: base64, commitMessage: 'Add ' + file.name })
+            .then(function (url) { saveModule(url); })
+            .catch(function (e) { errEl.textContent = e.message; });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        if (!urlValue) { errEl.textContent = 'Provide a URL or upload a file.'; return; }
+        saveModule(urlValue);
+      }
+    });
+  }
+
+  function openQuizEditor(module) {
+    apiCall('listQuizQuestionsForAdmin', { moduleId: module.ModuleID }).then(function (questions) {
+      renderQuizEditor(module, questions.length ? questions : [{ QuestionText: '', ChoiceA: '', ChoiceB: '', ChoiceC: '', ChoiceD: '', CorrectChoice: 'A' }]);
+    }).catch(function (e) { alert(e.message); });
+  }
+
+  function renderQuizEditor(module, questions) {
+    var html = '<div id="quizRows">' + questions.map(quizRowHtml).join('') + '</div>' +
+      '<button class="btn-ghost" id="quizAddRow" type="button">+ Add Question</button>' +
+      '<div class="modal-error" id="quizError"></div>';
+    openModal('Quiz — ' + module.Title, html,
+      '<button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-primary" id="quizSave">Save Quiz</button>');
+
+    document.getElementById('quizAddRow').addEventListener('click', function () {
+      document.getElementById('quizRows').insertAdjacentHTML('beforeend', quizRowHtml({ QuestionText: '', ChoiceA: '', ChoiceB: '', ChoiceC: '', ChoiceD: '', CorrectChoice: 'A' }));
+      wireQuizRemoveButtons();
+    });
+    wireQuizRemoveButtons();
+
+    document.getElementById('quizSave').addEventListener('click', function () {
+      var rows = Array.from(document.querySelectorAll('.quiz-row'));
+      var qs = rows.map(function (row) {
+        return {
+          QuestionText: row.querySelector('.qText').value.trim(),
+          ChoiceA: row.querySelector('.qA').value.trim(),
+          ChoiceB: row.querySelector('.qB').value.trim(),
+          ChoiceC: row.querySelector('.qC').value.trim(),
+          ChoiceD: row.querySelector('.qD').value.trim(),
+          CorrectChoice: row.querySelector('.qCorrect').value
+        };
+      }).filter(function (q) { return q.QuestionText; });
+      if (qs.length === 0) { document.getElementById('quizError').textContent = 'Add at least one question.'; return; }
+      apiCall('saveQuizQuestions', { moduleId: module.ModuleID, questions: qs })
+        .then(function () { closeModal(); })
+        .catch(function (e) { document.getElementById('quizError').textContent = e.message; });
+    });
+  }
+
+  function quizRowHtml(q) {
+    return '<div class="quiz-row">' +
+      '<div class="field"><label>Question</label><input class="qText" value="' + escapeHtml(q.QuestionText) + '"></div>' +
+      '<div class="choices">' +
+        '<div class="field"><label>Choice A</label><input class="qA" value="' + escapeHtml(q.ChoiceA) + '"></div>' +
+        '<div class="field"><label>Choice B</label><input class="qB" value="' + escapeHtml(q.ChoiceB) + '"></div>' +
+        '<div class="field"><label>Choice C</label><input class="qC" value="' + escapeHtml(q.ChoiceC) + '"></div>' +
+        '<div class="field"><label>Choice D</label><input class="qD" value="' + escapeHtml(q.ChoiceD) + '"></div>' +
+      '</div>' +
+      '<div class="field"><label>Correct Choice</label><select class="qCorrect">' +
+        ['A', 'B', 'C', 'D'].map(function (l) { return '<option ' + (q.CorrectChoice === l ? 'selected' : '') + '>' + l + '</option>'; }).join('') +
+      '</select></div>' +
+      '<button type="button" class="btn-danger quizRemove">Remove Question</button>' +
+      '</div>';
+  }
+
+  function wireQuizRemoveButtons() {
+    document.querySelectorAll('.quizRemove').forEach(function (btn) {
+      btn.onclick = function () {
+        if (document.querySelectorAll('.quiz-row').length <= 1) return;
+        btn.closest('.quiz-row').remove();
+      };
+    });
+  }
+
+  // =========================================================
+  // ADMINS
+  // =========================================================
+  function renderAdmins() {
+    var body = document.getElementById('adminsBody');
+    if (state.admins.length === 0) { body.innerHTML = '<tr><td colspan="3" class="empty-state">No admins yet.</td></tr>'; return; }
+    body.innerHTML = state.admins.map(function (a) {
+      return '<tr><td>' + escapeHtml(a.Name) + '</td><td>' + escapeHtml(a.Username) + '</td><td>' + escapeHtml(a.Email) + '</td></tr>';
+    }).join('');
+  }
+
+  document.getElementById('addAdminBtn').addEventListener('click', function () {
+    openModal('Add Admin',
+      '<div class="field"><label>Name</label><input id="adName"></div>' +
+      '<div class="field"><label>Username</label><input id="adUsername"></div>' +
+      '<div class="field"><label>Email</label><input id="adEmail"></div>' +
+      '<div class="field"><label>Initial PIN</label><input id="adPin" inputmode="numeric"></div>' +
+      '<div class="modal-error" id="adError"></div>',
+      '<button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-primary" id="adSubmit">Save</button>'
+    );
+    document.getElementById('adSubmit').addEventListener('click', function () {
+      var payload = { Name: document.getElementById('adName').value.trim(), Username: document.getElementById('adUsername').value.trim(), Email: document.getElementById('adEmail').value.trim() };
+      var pin = document.getElementById('adPin').value.trim();
+      if (!payload.Name || !payload.Username || !pin) { document.getElementById('adError').textContent = 'Name, username, and PIN are required.'; return; }
+      apiCall('addAdmin', { admin: payload, initialPin: pin })
+        .then(function () { closeModal(); refreshAll(); })
+        .catch(function (e) { document.getElementById('adError').textContent = e.message; });
+    });
+  });
+
+  // ---- Boot ----
+  (function boot() {
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try { state.admin = JSON.parse(saved); showApp(); } catch (e) { localStorage.removeItem(STORAGE_KEY); }
+    }
+  })();
+</script>
+</body>
+</html>

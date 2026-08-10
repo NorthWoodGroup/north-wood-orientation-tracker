@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>North Wood Group — Staff Orientation</title>
+<style>
+  :root {
+    --nw-black: #121212;
+    --nw-black-soft: #1c1c1a;
+    --nw-white: #ffffff;
+    --nw-offwhite: #f6f6f4;
+    --nw-grey-100: #ececea;
+    --nw-grey-200: #e0e0dc;
+    --nw-grey-300: #d4d4ce;
+    --nw-grey-500: #9a9a92;
+    --nw-grey-700: #57574f;
+    --nw-text: #1c1c1a;
+    --nw-not-started: #8a8a82;
+    --nw-in-progress: #b8860b;
+    --nw-completed: #2e7d4f;
+    --nw-overdue: #c0392b;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--nw-offwhite);
+    color: var(--nw-text);
+    min-height: 100vh;
+  }
+  h1, h2, h3 { letter-spacing: 0.02em; }
+  .brand-title { letter-spacing: 0.12em; text-transform: uppercase; }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+
+  /* ---- Login screen ---- */
+  #loginScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--nw-black);
+    padding: 24px;
+  }
+  .login-card {
+    background: var(--nw-black-soft);
+    border: 1px solid #2c2c28;
+    border-radius: var(--radius);
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+  .login-card img.logo { width: 140px; margin-bottom: 20px; }
+  .login-card h1 { color: var(--nw-white); font-size: 15px; margin: 0 0 4px; }
+  .login-card p.sub { color: var(--nw-grey-500); font-size: 13px; margin: 0 0 28px; }
+  .field { text-align: left; margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--nw-grey-500); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .field input {
+    width: 100%; padding: 11px 12px; border-radius: 6px;
+    border: 1px solid #3a3a34; background: #242420; color: var(--nw-white); font-size: 15px;
+  }
+  .field input:focus { outline: none; border-color: var(--nw-grey-500); }
+  .btn-primary {
+    width: 100%; padding: 12px; border-radius: 6px; border: none;
+    background: var(--nw-white); color: var(--nw-black); font-weight: 600; font-size: 14px;
+    letter-spacing: 0.04em; text-transform: uppercase; margin-top: 6px;
+  }
+  .btn-primary:hover { background: var(--nw-grey-200); }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .error-text { color: #e08a7d; font-size: 13px; margin-top: 14px; min-height: 18px; }
+
+  /* ---- App shell ---- */
+  #appScreen { display: none; min-height: 100vh; flex-direction: column; }
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--nw-white); border-bottom: 1px solid var(--nw-grey-200);
+    padding: 14px 24px;
+  }
+  header.topbar img.logo { height: 40px; }
+  .who { display: flex; align-items: center; gap: 14px; }
+  .who .name { font-size: 14px; font-weight: 600; }
+  .who .role { font-size: 12px; color: var(--nw-grey-700); }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--nw-grey-300); color: var(--nw-text);
+    padding: 8px 14px; border-radius: 6px; font-size: 13px;
+  }
+  .btn-ghost:hover { background: var(--nw-grey-100); }
+
+  main { flex: 1; padding: 28px 24px 60px; max-width: 920px; margin: 0 auto; width: 100%; }
+  main h2 { font-size: 18px; margin: 0 0 4px; }
+  main p.lead { color: var(--nw-grey-700); font-size: 13px; margin: 0 0 24px; }
+
+  .module-card {
+    background: var(--nw-white); border: 1px solid var(--nw-grey-200); border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .module-card .info { flex: 1; min-width: 0; }
+  .module-card h3 { font-size: 15px; margin: 0 0 4px; }
+  .module-card .meta { font-size: 12px; color: var(--nw-grey-700); display: flex; gap: 14px; flex-wrap: wrap; }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #fff; white-space: nowrap;
+  }
+  .pill.not-started { background: var(--nw-not-started); }
+  .pill.in-progress { background: var(--nw-in-progress); }
+  .pill.completed { background: var(--nw-completed); }
+  .pill.overdue { background: var(--nw-overdue); }
+  .empty-state { color: var(--nw-grey-500); font-size: 14px; padding: 40px 0; text-align: center; }
+
+  /* ---- Module viewer modal ---- */
+  #viewerOverlay {
+    display: none; position: fixed; inset: 0; background: rgba(18,18,18,0.72);
+    align-items: center; justify-content: center; padding: 20px; z-index: 100;
+  }
+  .viewer-panel {
+    background: var(--nw-white); border-radius: var(--radius); width: 100%; max-width: 820px;
+    max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .viewer-head { padding: 16px 20px; border-bottom: 1px solid var(--nw-grey-200); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .viewer-head h3 { margin: 0 0 4px; font-size: 16px; }
+  .viewer-head p { margin: 0; font-size: 13px; color: var(--nw-grey-700); }
+  .viewer-close { background: none; border: none; font-size: 20px; color: var(--nw-grey-700); line-height: 1; padding: 4px; }
+  .viewer-body { flex: 1; overflow-y: auto; padding: 0; background: var(--nw-grey-100); }
+  .viewer-body .content-frame { width: 100%; height: 3200px; border: none; display: block; background: #fff; }
+  .viewer-body .content-frame.short { height: 65vh; }
+  .viewer-body .link-out { padding: 40px 24px; text-align: center; }
+  .viewer-foot { padding: 16px 20px; border-top: 1px solid var(--nw-grey-200); background: #fff; }
+  .check-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
+  .scroll-hint { font-size: 12px; color: var(--nw-grey-700); margin-bottom: 10px; }
+  .quiz-q { margin-bottom: 18px; }
+  .quiz-q p.qtext { font-weight: 600; font-size: 14px; margin: 0 0 8px; }
+  .quiz-choice { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 0; }
+  .quiz-result { font-size: 13px; margin-top: 10px; padding: 10px 12px; border-radius: 6px; }
+  .quiz-result.pass { background: #e6f3ea; color: var(--nw-completed); }
+  .quiz-result.fail { background: #fbe9e6; color: var(--nw-overdue); }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <img class="logo" src="../assets/logo-dark-bg.png" alt="North Wood Group">
+    <h1 class="brand-title">Staff Orientation</h1>
+    <p class="sub">Sign in to view your assigned training</p>
+    <div class="field">
+      <label for="username">Username</label>
+      <input id="username" type="text" autocomplete="username" autocapitalize="none">
+    </div>
+    <div class="field">
+      <label for="pin">PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="loginBtn">Sign In</button>
+    <div class="error-text" id="loginError"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <header class="topbar">
+    <img class="logo" src="../assets/logo-light-bg.png" alt="North Wood Group">
+    <div class="who">
+      <div>
+        <div class="name" id="whoName"></div>
+        <div class="role" id="whoRole"></div>
+      </div>
+      <button class="btn-ghost" id="signOutBtn">Sign Out</button>
+    </div>
+  </header>
+  <main>
+    <h2>Your Training</h2>
+    <p class="lead">Modules assigned to you, with status and due date.</p>
+    <div id="moduleList"></div>
+  </main>
+</div>
+
+<div id="viewerOverlay">
+  <div class="viewer-panel">
+    <div class="viewer-head">
+      <div>
+        <h3 id="viewerTitle"></h3>
+        <p id="viewerDesc"></p>
+      </div>
+      <button class="viewer-close" id="viewerCloseBtn">&times;</button>
+    </div>
+    <div class="viewer-body" id="viewerBody"></div>
+    <div class="viewer-foot" id="viewerFoot"></div>
+  </div>
+</div>
+
+<script>
+  // Set this to your deployed Apps Script web app URL (Deploy > Manage deployments).
+  var CONFIG = {
+    API_URL: 'https://script.google.com/macros/s/AKfycbyjHlJ0M3gjIrQ0VXA7bXdlbnYzURLWo8wWnMmo3EzMQz9EcoURMjw6EfmSXaLc__HE/exec'
+  };
+
+  var STORAGE_KEY = 'nw_staff_session';
+  var state = { staff: null, dashboard: [] };
+
+  function apiCall(action, payload) {
+    return fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, payload: payload || {} })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.error || 'Request failed');
+        return r.data;
+      });
+  }
+
+  function statusClass(status) {
+    return { 'Not Started': 'not-started', 'In Progress': 'in-progress', 'Completed': 'completed', 'Overdue': 'overdue' }[status] || 'not-started';
+  }
+
+  // ---- Login ----
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('pin').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+
+  function doLogin() {
+    var username = document.getElementById('username').value.trim();
+    var pin = document.getElementById('pin').value.trim();
+    var errEl = document.getElementById('loginError');
+    errEl.textContent = '';
+    if (!username || !pin) { errEl.textContent = 'Enter your username and PIN.'; return; }
+
+    var btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    apiCall('staffLogin', { username: username, pin: pin })
+      .then(function (staff) {
+        if (!staff) { errEl.textContent = 'Incorrect username or PIN.'; btn.disabled = false; return; }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(staff));
+        state.staff = staff;
+        showApp();
+      })
+      .catch(function (e) { errEl.textContent = e.message; btn.disabled = false; });
+  }
+
+  document.getElementById('signOutBtn').addEventListener('click', function () {
+    localStorage.removeItem(STORAGE_KEY);
+    state.staff = null;
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('username').value = '';
+    document.getElementById('pin').value = '';
+  });
+
+  function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'flex';
+    document.getElementById('whoName').textContent = state.staff.Name;
+    document.getElementById('whoRole').textContent = state.staff.Role + (state.staff.Office ? ' · ' + state.staff.Office : '');
+    loadDashboard();
+  }
+
+  function loadDashboard() {
+    var list = document.getElementById('moduleList');
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+    apiCall('getStaffDashboard', { staffId: state.staff.StaffID })
+      .then(function (rows) {
+        state.dashboard = rows;
+        renderDashboard();
+      })
+      .catch(function (e) { list.innerHTML = '<div class="empty-state">' + e.message + '</div>'; });
+  }
+
+  function renderDashboard() {
+    var list = document.getElementById('moduleList');
+    if (state.dashboard.length === 0) {
+      list.innerHTML = '<div class="empty-state">No training modules assigned yet.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    state.dashboard
+      .slice()
+      .sort(function (a, b) {
+        var order = { 'Overdue': 0, 'In Progress': 1, 'Not Started': 2, 'Completed': 3 };
+        return (order[a.Status] - order[b.Status]) || (a.DueDate < b.DueDate ? -1 : 1);
+      })
+      .forEach(function (m) {
+        var card = document.createElement('div');
+        card.className = 'module-card';
+        card.innerHTML =
+          '<div class="info">' +
+            '<h3>' + escapeHtml(m.Title) + '</h3>' +
+            '<div class="meta">' +
+              '<span>' + escapeHtml(m.Category || '') + '</span>' +
+              '<span>Due ' + escapeHtml(m.DueDate || '—') + '</span>' +
+              (m.Status === 'Completed' ? '<span>Completed ' + escapeHtml(m.CompletedDate) + '</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<span class="pill ' + statusClass(m.Status) + '">' + m.Status + '</span>';
+        card.addEventListener('click', function () { openModule(m); });
+        list.appendChild(card);
+      });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // ---- Module viewer ----
+  var overlay = document.getElementById('viewerOverlay');
+  document.getElementById('viewerCloseBtn').addEventListener('click', closeModule);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModule(); });
+
+  function closeModule() {
+    overlay.style.display = 'none';
+    document.getElementById('viewerBody').innerHTML = '';
+    document.getElementById('viewerFoot').innerHTML = '';
+  }
+
+  function openModule(m) {
+    document.getElementById('viewerTitle').textContent = m.Title;
+    document.getElementById('viewerDesc').textContent = m.Description || '';
+    renderViewerBody(m);
+    renderViewerFoot(m);
+    overlay.style.display = 'flex';
+
+    if (m.Status === 'Not Started') {
+      apiCall('markModuleOpened', { staffId: state.staff.StaffID, moduleId: m.ModuleID })
+        .then(function () {
+          m.Status = 'In Progress';
+          var idx = state.dashboard.findIndex(function (d) { return d.ModuleID === m.ModuleID; });
+          if (idx !== -1) state.dashboard[idx].Status = 'In Progress';
+          renderDashboard();
+        })
+        .catch(function () {});
+    }
+  }
+
+  function embedUrl_(m) {
+    var url = m.FilePathOrURL || '';
+    if (m.FileType === 'video') {
+      if (url.indexOf('youtube.com') !== -1 || url.indexOf('youtu.be') !== -1) {
+        var id = (url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]+)/) || [])[1];
+        return id ? 'https://www.youtube.com/embed/' + id : url;
+      }
+      if (url.indexOf('vimeo.com') !== -1) {
+        var vid = (url.match(/vimeo\.com\/(\d+)/) || [])[1];
+        return vid ? 'https://player.vimeo.com/video/' + vid : url;
+      }
+    }
+    return url;
+  }
+
+  function renderViewerBody(m) {
+    var body = document.getElementById('viewerBody');
+    body.innerHTML = '';
+    body.scrollTop = 0;
+
+    if (m.FileType === 'link') {
+      body.innerHTML = '<div class="link-out"><p>This module links to external material.</p>' +
+        '<a class="btn-ghost" style="display:inline-block;text-decoration:none;" target="_blank" rel="noopener" href="' + escapeHtml(m.FilePathOrURL) + '">Open material &rarr;</a></div>';
+      return;
+    }
+
+    var iframe = document.createElement('iframe');
+    iframe.src = embedUrl_(m);
+    iframe.className = 'content-frame' + (m.FileType === 'video' ? ' short' : '');
+    if (m.FileType === 'video') iframe.setAttribute('allowfullscreen', 'true');
+    body.appendChild(iframe);
+
+    if (m.CompletionMethod === 'scroll') {
+      var hint = document.createElement('div');
+      hint.className = 'scroll-hint';
+      hint.style.padding = '8px 16px';
+      hint.textContent = 'Scroll to the end of the document to unlock "Mark Complete".';
+      body.insertBefore(hint, iframe);
+
+      body.addEventListener('scroll', function onScroll() {
+        var reachedEnd = body.scrollTop + body.clientHeight >= body.scrollHeight - 24;
+        var completeBtn = document.getElementById('scrollCompleteBtn');
+        if (reachedEnd && completeBtn) completeBtn.disabled = false;
+      });
+    }
+  }
+
+  function renderViewerFoot(m) {
+    var foot = document.getElementById('viewerFoot');
+    foot.innerHTML = '';
+
+    if (m.Status === 'Completed') {
+      foot.innerHTML = '<div class="quiz-result pass">Completed on ' + escapeHtml(m.CompletedDate) + '.</div>';
+      return;
+    }
+
+    if (m.CompletionMethod === 'checkbox') {
+      foot.innerHTML =
+        '<div class="check-row"><input type="checkbox" id="attestCheck"> <label for="attestCheck">I confirm I have reviewed this material.</label></div>' +
+        '<button class="btn-primary" id="completeBtn" disabled>Mark Complete</button>';
+      document.getElementById('attestCheck').addEventListener('change', function (e) {
+        document.getElementById('completeBtn').disabled = !e.target.checked;
+      });
+      document.getElementById('completeBtn').addEventListener('click', function () { completeSimple(m); });
+
+    } else if (m.CompletionMethod === 'scroll') {
+      foot.innerHTML = '<button class="btn-primary" id="scrollCompleteBtn" disabled>Mark Complete</button>';
+      document.getElementById('scrollCompleteBtn').addEventListener('click', function () { completeSimple(m); });
+
+    } else if (m.CompletionMethod === 'quiz') {
+      foot.innerHTML = '<button class="btn-primary" id="startQuizBtn">Take Quiz</button><div id="quizArea"></div>';
+      document.getElementById('startQuizBtn').addEventListener('click', function () { loadQuiz(m); });
+    }
+  }
+
+  function completeSimple(m) {
+    apiCall('markModuleComplete', { staffId: state.staff.StaffID, moduleId: m.ModuleID })
+      .then(function () {
+        m.Status = 'Completed';
+        m.CompletedDate = new Date().toISOString().slice(0, 10);
+        var idx = state.dashboard.findIndex(function (d) { return d.ModuleID === m.ModuleID; });
+        if (idx !== -1) state.dashboard[idx] = m;
+        renderDashboard();
+        renderViewerFoot(m);
+      })
+      .catch(function (e) { alert(e.message); });
+  }
+
+  function loadQuiz(m) {
+    apiCall('getQuizQuestions', { moduleId: m.ModuleID }).then(function (questions) {
+      var area = document.getElementById('quizArea');
+      document.getElementById('startQuizBtn').style.display = 'none';
+      area.innerHTML = '';
+      questions.forEach(function (q) {
+        var qDiv = document.createElement('div');
+        qDiv.className = 'quiz-q';
+        var choicesHtml = ['A', 'B', 'C', 'D'].map(function (letter) {
+          var text = q['Choice' + letter];
+          if (!text) return '';
+          return '<label class="quiz-choice"><input type="radio" name="' + q.QuestionID + '" value="' + letter + '"> ' + escapeHtml(text) + '</label>';
+        }).join('');
+        qDiv.innerHTML = '<p class="qtext">' + escapeHtml(q.QuestionText) + '</p>' + choicesHtml;
+        area.appendChild(qDiv);
+      });
+      var submitBtn = document.createElement('button');
+      submitBtn.className = 'btn-primary';
+      submitBtn.textContent = 'Submit Answers';
+      submitBtn.addEventListener('click', function () { submitQuiz(m, questions); });
+      area.appendChild(submitBtn);
+    }).catch(function (e) { alert(e.message); });
+  }
+
+  function submitQuiz(m, questions) {
+    var answers = {};
+    questions.forEach(function (q) {
+      var checked = document.querySelector('input[name="' + q.QuestionID + '"]:checked');
+      answers[q.QuestionID] = checked ? checked.value : '';
+    });
+    apiCall('submitQuizAnswers', { staffId: state.staff.StaffID, moduleId: m.ModuleID, answers: answers })
+      .then(function (result) {
+        var area = document.getElementById('quizArea');
+        var resultDiv = document.createElement('div');
+        resultDiv.className = 'quiz-result ' + (result.passed ? 'pass' : 'fail');
+        resultDiv.textContent = result.passed
+          ? 'All ' + result.totalQuestions + ' correct — module complete.'
+          : 'You got ' + result.correctCount + ' of ' + result.totalQuestions + ' correct. Review the material and try again.';
+        area.appendChild(resultDiv);
+        if (result.passed) {
+          m.Status = 'Completed';
+          m.CompletedDate = new Date().toISOString().slice(0, 10);
+          var idx = state.dashboard.findIndex(function (d) { return d.ModuleID === m.ModuleID; });
+          if (idx !== -1) state.dashboard[idx] = m;
+          renderDashboard();
+        } else {
+          var retryBtn = document.createElement('button');
+          retryBtn.className = 'btn-ghost';
+          retryBtn.style.marginTop = '10px';
+          retryBtn.textContent = 'Try Again';
+          retryBtn.addEventListener('click', function () { loadQuiz(m); });
+          area.appendChild(retryBtn);
+        }
+      })
+      .catch(function (e) { alert(e.message); });
+  }
+
+  // ---- Boot ----
+  (function boot() {
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        state.staff = JSON.parse(saved);
+        showApp();
+      } catch (e) { localStorage.removeItem(STORAGE_KEY); }
+    }
+  })();
+</script>
+</body>
+</html>
