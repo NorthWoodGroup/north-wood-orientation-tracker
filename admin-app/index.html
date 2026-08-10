@@ -134,6 +134,7 @@
     <button data-tab="dashboard" class="active">Dashboard</button>
     <button data-tab="staff">Staff</button>
     <button data-tab="modules">Modules</button>
+    <button data-tab="lookups">Lookups</button>
     <button data-tab="admins">Admins</button>
   </nav>
   <main>
@@ -143,7 +144,7 @@
         <button class="btn-primary" id="assignBtn">+ Assign Module</button>
       </div>
       <div class="filters">
-        <select id="filterOffice"><option value="">All Offices</option></select>
+        <select id="filterDepartment"><option value="">All Departments</option></select>
         <select id="filterRole"><option value="">All Roles</option></select>
         <select id="filterStatus">
           <option value="">All Statuses</option>
@@ -151,14 +152,14 @@
         </select>
       </div>
       <div class="card-table"><table><thead><tr>
-        <th>Staff</th><th>Office</th><th>Role</th><th>Module</th><th>Category</th><th>Assigned</th><th>Due</th><th>Status</th><th>Source</th><th></th>
+        <th>Staff</th><th>Department</th><th>Role</th><th>Module</th><th>Category</th><th>Assigned</th><th>Due</th><th>Status</th><th>Source</th><th></th>
       </tr></thead><tbody id="dashboardBody"></tbody></table></div>
     </section>
 
     <section class="panel" id="panel-staff">
       <div class="panel-head"><h2>Staff</h2><button class="btn-primary" id="addStaffBtn">+ Add Staff</button></div>
       <div class="card-table"><table><thead><tr>
-        <th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Office</th><th>Status</th>
+        <th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Department</th><th>Status</th>
       </tr></thead><tbody id="staffBody"></tbody></table></div>
     </section>
 
@@ -167,6 +168,20 @@
       <div class="card-table"><table><thead><tr>
         <th>Title</th><th>Category</th><th>Type</th><th>Completion</th><th>Days</th><th>Default Roles</th>
       </tr></thead><tbody id="modulesBody"></tbody></table></div>
+    </section>
+
+    <section class="panel" id="panel-lookups">
+      <div class="panel-head"><h2>Lookups</h2></div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:280px;">
+          <div class="panel-head"><h2 style="font-size:14px;">Roles</h2><button class="btn-primary" id="addRoleBtn">+ Add Role</button></div>
+          <div class="card-table"><table><thead><tr><th>Name</th><th></th></tr></thead><tbody id="rolesBody"></tbody></table></div>
+        </div>
+        <div style="flex:1; min-width:280px;">
+          <div class="panel-head"><h2 style="font-size:14px;">Departments</h2><button class="btn-primary" id="addDepartmentBtn">+ Add Department</button></div>
+          <div class="card-table"><table><thead><tr><th>Name</th><th></th></tr></thead><tbody id="departmentsBody"></tbody></table></div>
+        </div>
+      </div>
     </section>
 
     <section class="panel" id="panel-admins">
@@ -188,9 +203,8 @@
   // Set this to your deployed Apps Script web app URL (Deploy > Manage deployments).
   var CONFIG = { API_URL: 'https://script.google.com/macros/s/AKfycbyjHlJ0M3gjIrQ0VXA7bXdlbnYzURLWo8wWnMmo3EzMQz9EcoURMjw6EfmSXaLc__HE/exec' };
   var STORAGE_KEY = 'nw_admin_session';
-  var ROLES = ['Warehouse', 'Driver', 'Office', 'Management'];
 
-  var state = { admin: null, staff: [], modules: [], admins: [], dashboard: [] };
+  var state = { admin: null, staff: [], modules: [], admins: [], dashboard: [], roles: [], departments: [] };
 
   function apiCall(action, payload) {
     return fetch(CONFIG.API_URL, {
@@ -269,10 +283,13 @@
       apiCall('listStaff', {}),
       apiCall('listModules', {}),
       apiCall('listAdmins', {}),
-      apiCall('getAdminDashboard', {})
+      apiCall('getAdminDashboard', {}),
+      apiCall('listRoles', {}),
+      apiCall('listDepartments', {})
     ]).then(function (r) {
       state.staff = r[0]; state.modules = r[1]; state.admins = r[2]; state.dashboard = r[3];
-      renderStaff(); renderModules(); renderAdmins(); renderDashboard();
+      state.roles = r[4]; state.departments = r[5];
+      renderStaff(); renderModules(); renderAdmins(); renderDashboard(); renderLookups();
     }).catch(function (e) { alert(e.message); });
   }
 
@@ -292,31 +309,33 @@
   // DASHBOARD
   // =========================================================
   function populateFilterOptions() {
-    var offices = Array.from(new Set(state.staff.map(function (s) { return s.Office; }).filter(Boolean))).sort();
-    var roles = Array.from(new Set(state.staff.map(function (s) { return s.Role; }).filter(Boolean))).sort();
-    var officeSel = document.getElementById('filterOffice');
+    var departmentSel = document.getElementById('filterDepartment');
     var roleSel = document.getElementById('filterRole');
-    officeSel.innerHTML = '<option value="">All Offices</option>' + offices.map(function (o) { return '<option>' + escapeHtml(o) + '</option>'; }).join('');
-    roleSel.innerHTML = '<option value="">All Roles</option>' + roles.map(function (r) { return '<option>' + escapeHtml(r) + '</option>'; }).join('');
+    var prevDept = departmentSel.value;
+    var prevRole = roleSel.value;
+    departmentSel.innerHTML = '<option value="">All Departments</option>' + state.departments.map(function (d) { return '<option>' + escapeHtml(d) + '</option>'; }).join('');
+    roleSel.innerHTML = '<option value="">All Roles</option>' + state.roles.map(function (r) { return '<option>' + escapeHtml(r) + '</option>'; }).join('');
+    departmentSel.value = prevDept;
+    roleSel.value = prevRole;
   }
-  ['filterOffice', 'filterRole', 'filterStatus'].forEach(function (id) {
+  ['filterDepartment', 'filterRole', 'filterStatus'].forEach(function (id) {
     document.getElementById(id).addEventListener('change', renderDashboard);
   });
 
   function renderDashboard() {
     populateFilterOptions();
-    var office = document.getElementById('filterOffice').value;
+    var department = document.getElementById('filterDepartment').value;
     var role = document.getElementById('filterRole').value;
     var status = document.getElementById('filterStatus').value;
     var rows = state.dashboard.filter(function (a) {
-      return (!office || a.Office === office) && (!role || a.Role === role) && (!status || a.Status === status);
+      return (!department || a.Department === department) && (!role || a.Role === role) && (!status || a.Status === status);
     });
     var body = document.getElementById('dashboardBody');
     if (rows.length === 0) { body.innerHTML = '<tr><td colspan="10" class="empty-state">No assignments match these filters.</td></tr>'; return; }
     body.innerHTML = rows.map(function (a) {
       return '<tr>' +
         '<td>' + escapeHtml(a.StaffName) + '</td>' +
-        '<td>' + escapeHtml(a.Office) + '</td>' +
+        '<td>' + escapeHtml(a.Department) + '</td>' +
         '<td>' + escapeHtml(a.Role) + '</td>' +
         '<td>' + escapeHtml(a.ModuleTitle) + '</td>' +
         '<td>' + escapeHtml(a.Category) + '</td>' +
@@ -363,7 +382,7 @@
       var active = (s.Active === true || s.Active === 'TRUE' || s.Active === 'Y');
       return '<tr class="row-hover" data-staff="' + s.StaffID + '">' +
         '<td>' + escapeHtml(s.Name) + '</td><td>' + escapeHtml(s.Username) + '</td><td>' + escapeHtml(s.Email) + '</td>' +
-        '<td>' + escapeHtml(s.Role) + '</td><td>' + escapeHtml(s.Office) + '</td>' +
+        '<td>' + escapeHtml(s.Role) + '</td><td>' + escapeHtml(s.Department) + '</td>' +
         '<td><span class="pill ' + (active ? 'completed' : 'inactive') + '">' + (active ? 'Active' : 'Inactive') + '</span></td>' +
         '</tr>';
     }).join('');
@@ -376,13 +395,14 @@
 
   function openStaffForm(staff) {
     var isEdit = !!staff;
-    var roleOptions = ROLES.map(function (r) { return '<option ' + (staff && staff.Role === r ? 'selected' : '') + '>' + r + '</option>'; }).join('');
+    var roleOptions = state.roles.map(function (r) { return '<option ' + (staff && staff.Role === r ? 'selected' : '') + '>' + r + '</option>'; }).join('');
+    var deptOptions = state.departments.map(function (d) { return '<option ' + (staff && staff.Department === d ? 'selected' : '') + '>' + d + '</option>'; }).join('');
     openModal(isEdit ? 'Edit Staff' : 'Add Staff',
       '<div class="field"><label>Name</label><input id="stName" value="' + (staff ? escapeHtml(staff.Name) : '') + '"></div>' +
       '<div class="field"><label>Username</label><input id="stUsername" value="' + (staff ? escapeHtml(staff.Username) : '') + '"></div>' +
       '<div class="field"><label>Email</label><input id="stEmail" value="' + (staff ? escapeHtml(staff.Email) : '') + '"></div>' +
       '<div class="field"><label>Role</label><select id="stRole">' + roleOptions + '</select></div>' +
-      '<div class="field"><label>Office / Department</label><input id="stOffice" value="' + (staff ? escapeHtml(staff.Office) : '') + '"></div>' +
+      '<div class="field"><label>Department</label><select id="stDepartment">' + deptOptions + '</select></div>' +
       (isEdit
         ? '<div class="field"><label>Active</label><select id="stActive"><option value="true"' + (staff.Active ? ' selected' : '') + '>Active</option><option value="false"' + (!staff.Active ? ' selected' : '') + '>Inactive</option></select></div>'
         : '<div class="field"><label>Initial PIN</label><input id="stPin" inputmode="numeric"></div>') +
@@ -405,7 +425,7 @@
         Username: document.getElementById('stUsername').value.trim(),
         Email: document.getElementById('stEmail').value.trim(),
         Role: document.getElementById('stRole').value,
-        Office: document.getElementById('stOffice').value.trim()
+        Department: document.getElementById('stDepartment').value
       };
       if (!payload.Name || !payload.Username) { document.getElementById('stError').textContent = 'Name and username are required.'; return; }
 
@@ -455,7 +475,7 @@
     var methods = ['checkbox', 'scroll', 'quiz'];
     var fileTypeOptions = fileTypes.map(function (t) { return '<option ' + (module && module.FileType === t ? 'selected' : '') + '>' + t + '</option>'; }).join('');
     var methodOptions = methods.map(function (t) { return '<option ' + (module && module.CompletionMethod === t ? 'selected' : '') + '>' + t + '</option>'; }).join('');
-    var roleChecks = ROLES.map(function (r) {
+    var roleChecks = state.roles.map(function (r) {
       var checked = module && (module.DefaultForRoles || '').split(',').map(function (x) { return x.trim(); }).indexOf(r) !== -1;
       return '<label style="margin-right:12px;font-size:13px;"><input type="checkbox" class="roleCk" value="' + r + '" ' + (checked ? 'checked' : '') + '> ' + r + '</label>';
     }).join('');
@@ -616,6 +636,54 @@
       apiCall('addAdmin', { admin: payload, initialPin: pin })
         .then(function () { closeModal(); refreshAll(); })
         .catch(function (e) { document.getElementById('adError').textContent = e.message; });
+    });
+  });
+
+  // =========================================================
+  // LOOKUPS (Roles, Departments)
+  // =========================================================
+  function renderLookups() {
+    renderLookupTable('rolesBody', state.roles, 'role', 3);
+    renderLookupTable('departmentsBody', state.departments, 'department', 2);
+  }
+
+  function renderLookupTable(bodyId, items, kind, colspan) {
+    var body = document.getElementById(bodyId);
+    if (items.length === 0) { body.innerHTML = '<tr><td colspan="' + colspan + '" class="empty-state">None yet.</td></tr>'; return; }
+    body.innerHTML = items.map(function (name) {
+      return '<tr><td>' + escapeHtml(name) + '</td>' +
+        '<td><button class="btn-danger" data-kind="' + kind + '" data-name="' + escapeHtml(name) + '">Remove</button></td></tr>';
+    }).join('');
+    body.querySelectorAll('[data-kind="' + kind + '"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (!confirm('Remove "' + btn.dataset.name + '"? This does not update staff or modules that already reference it.')) return;
+        var action = kind === 'role' ? 'deleteRole' : 'deleteDepartment';
+        apiCall(action, { name: btn.dataset.name }).then(refreshAll).catch(function (e) { alert(e.message); });
+      });
+    });
+  }
+
+  document.getElementById('addRoleBtn').addEventListener('click', function () {
+    openModal('Add Role',
+      '<div class="field"><label>Role Name</label><input id="lkName"></div><div class="modal-error" id="lkError"></div>',
+      '<button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-primary" id="lkSubmit">Save</button>'
+    );
+    document.getElementById('lkSubmit').addEventListener('click', function () {
+      var name = document.getElementById('lkName').value.trim();
+      if (!name) { document.getElementById('lkError').textContent = 'Role name is required.'; return; }
+      apiCall('addRole', { name: name }).then(function () { closeModal(); refreshAll(); }).catch(function (e) { document.getElementById('lkError').textContent = e.message; });
+    });
+  });
+
+  document.getElementById('addDepartmentBtn').addEventListener('click', function () {
+    openModal('Add Department',
+      '<div class="field"><label>Department Name</label><input id="lkName"></div><div class="modal-error" id="lkError"></div>',
+      '<button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-primary" id="lkSubmit">Save</button>'
+    );
+    document.getElementById('lkSubmit').addEventListener('click', function () {
+      var name = document.getElementById('lkName').value.trim();
+      if (!name) { document.getElementById('lkError').textContent = 'Department name is required.'; return; }
+      apiCall('addDepartment', { name: name }).then(function () { closeModal(); refreshAll(); }).catch(function (e) { document.getElementById('lkError').textContent = e.message; });
     });
   });
 
